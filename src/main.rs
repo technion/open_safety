@@ -17,19 +17,33 @@ fn process_malware(filename: &std::path::Path) {
     // https://stackoverflow.com/questions/43019846/best-way-to-format-a-file-name-based-on-another-path-in-rust
     let mut newname = PathBuf::from(filename);
     newname.set_file_name(format!("DANGEROUS {}{}", newname.file_stem().unwrap().to_str().unwrap(), ".txt"));
-    fs::rename(filename, newname).expect("Failed to rename file");
+    if let Err(e) = fs::rename(filename, newname) {
+        display_information(Some(&format!("Failed to rename file: {}", e)));
+        return;
+    };
 
     // Create a new file with the same name, .com extension to ensure EICAR traps it.
     // Why yes, the original version of this script did write EICAR to .js files and several AV vendors wouldn't flag it
     let mut eicarfile = PathBuf::from(filename);
     eicarfile.set_extension("com");
-    let mut file = File::create(eicarfile).expect("cannot create file");
-  
+    let mut file = match File::create(eicarfile) {
+        Ok(f) => f,
+        Err(e) => { 
+            display_information(Some(&format!("Failed to create new file: {}", e)));
+            return;
+        }
+    };
+ 
     // In order to avoid this application itself being flagged by endpoint software, we've encoded our string
     // The below is the EICAR test string, with a new line before and after
     let eicarb64 = "WDVPIVAlQEFQWzRcUFpYNTQoUF4pN0NDKTd9JEVJQ0FSLVNUQU5EQVJELUFOVElWSVJVUy1URVNULUZJTEUhJEgrSCoK";
     // The decode has to be safe as the B64 input is hard coded
-    file.write_all(&decode(eicarb64).unwrap()).expect("Couldn't edit file");
+    if let Err(e) = file.write_all(&decode(eicarb64).unwrap()) {
+        display_information(Some(&format!("Failed to write EICAR to file: {}", e)));
+        return;
+    };
+
+    display_information(None);
 }
 
 fn main() {
@@ -55,7 +69,8 @@ fn main() {
         println!("Not a file");
         return;
     }
-    process_malware(&path)
+    process_malware(&path);
+
 }
 
 fn check_safe_extension(path: &std::path::Path) -> bool {
@@ -63,15 +78,15 @@ fn check_safe_extension(path: &std::path::Path) -> bool {
     let extension = match path.extension().and_then(OsStr::to_str) {
         Some(ext) => ext,
         None => {
-            println!("Missing file extension");
+            display_information(Some("Filename provided did not have an extension"));
             return false;
         }
     };
 
-    let allowed_extensions = [ "js", "jse", "vbs"];
+    let allowed_extensions = [ "js", "jse", "vbs", "wsf", "wsh", "hta"];
     println!("File extension is {}", extension);
     if !allowed_extensions.contains(&extension) {
-        println!("Disallowed extension");
+        display_information(Some("Filename provided did not have an allowed extension"));
         return false;
     }
     true
@@ -83,13 +98,36 @@ fn check_safe_path(path: &std::path::Path) -> bool {
     let canonical = path.to_str().expect("convert to path");
     println!("Canonical path is ;{};", canonical);
     if canonical.starts_with("\\\\?\\C:\\Windows\\") || canonical.starts_with("\\\\?\\C:\\Program Files") {
-        println!("Unsafe path");
+        display_information(Some("File resides in unsafe path"));
         return false;
     }
     true
 }
 
+fn display_information(input: Option<&str>) {
+    let display = r##"
+    
+    ================================================================
 
+    This computer attempted to open a file type that is not usually
+    associated with legitimate activities and has been protected by
+    the open_safety system.
+
+    If you are a developer or admin who is certain a script is safe,
+    scripts can be run by passing as arguments to
+    c:\windows\system32\cscript.exe
+
+    This application will attempt to raise an alarm that should be
+    seen by your IT security team.
+
+    "##;
+
+    let notice = match input {
+        None => String::from("The potentially malicious application has been defanged. A substitute file was created to raise alarms"),
+        Some(x) => format!("Unfortunately the following error was encountered when triaging this issue:\n    {}", x)
+    };
+    println!("{}{}", display, notice);
+}
 #[cfg(test)]
 #[test]
 fn rejects_bad_extensions() {
