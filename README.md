@@ -3,5 +3,31 @@ An improvement on the "map .js files to notepad" trick
 
 Designed to assist with securing environments by ensuring such blocked events raise significant alarms.
 
-# Use
-Associated with executable with any supported extension.
+# Installation
+## Enterprise
+- Deploy the executable to an appropriate location
+- Replace notepad.exe mappings in Group Policies with the new location
+## SMB/Home User
+- Run OpenSafetyInstall.ps1 from an elevated Powershell
+
+# Response
+
+This applicaton aims to provide two mechanisms to better handle script execution than the notepad trick. Specifically:
+
+- It provides the user a suitable message, presenting a much less confusing feedback than open a test file of source code
+- It attempts to alert any monitoring IT teams
+
+## Details
+
+When this application is executed it will follow the below process, for the script "example.js":
+
+- To prevent any misuse, it first ensures the called file has an appropriate file extension
+- It further checks the file does not sit under standard system directories
+- The file is renamed to "DANGEROUS example.js.txt" to neutralise the risk.
+- It creates the file "example.com" in the same directory containing the EICAR test string. This should set should defenders by setting off appropriate alarms.
+
+## TODO
+
+- [ ] Installation Powershell to fetch executable from Github releases 
+- [ ] Implement CI with Github actions
+- [ ] Obtain a code signing cert
