@@ -145,7 +145,7 @@ fn pause() {
     stdout.flush().unwrap();
 
     // Read a single byte and discard
-    let _ = stdin.read(&mut [0u8]).unwrap();
+    let _ = stdin.read(&mut [0_u8]).unwrap();
 }
 
 #[cfg(test)]
@@ -164,11 +164,13 @@ mod tests {
     #[test]
     fn rejects_bad_paths() {
         // This is a valid for the the safe path check, but due to the extension it should never be practically called
-        assert!(check_safe_path(&Path::new("C:\\Windows\\win.ini").canonicalize().unwrap()).is_err());
+        // This isn't technically accurate as check_safe_path is always called after canonicalize(). However,
+        // that function relies on the file existing which is a real mess for CI
+        assert!(check_safe_path(Path::new("\\\\?\\C:\\Windows\\win.ini")).is_err());
     }
     #[test]
     fn accepts_good_paths() {
         // This path isn't valid for the rest of our application as it's a folder, but it's valid for this test.
-        assert!(check_safe_path(&Path::new("C:\\Users\\public\\").canonicalize().unwrap()).is_ok());
+        assert!(check_safe_path(Path::new("C:\\Users\\public\\")).is_ok());
     }
 }
