@@ -26,8 +26,13 @@ When this application is executed it will follow the below process, for the scri
 - The file is renamed to "DANGEROUS example.js.txt" to neutralise the risk.
 - It creates the file "example.com" in the same directory containing the EICAR test string. This should set should defenders by setting off appropriate alarms.
 
+## Development
+
+This application currently uses only one external crate (base64). It's designed as much as possible with guard rails around misuse, and it never actually deletes content. CI has been setup with strict use of clippy and cargo fmt. There's a deliberate goal of becoming "stable" and not requiring ongoing addition of features to assist with this becoming trusted for use. To this end, I'm unlikely to accept PRs with substantive changes.
+
 ## TODO
 
-- [ ] Installation Powershell to fetch executable from Github releases 
-- [ ] Implement CI with Github actions
+- [X] Installation Powershell to fetch executable from Github releases 
+- [X] Implement CI with Github actions
+- [ ] Blog post on why this is useful
 - [ ] Obtain a code signing cert

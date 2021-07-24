@@ -5,7 +5,13 @@ If (-not (Test-Path $installpath)) {
     New-Item -Path $installpath -ItemType Directory
 }
 
-Copy-Item .\target\debug\open_safety.exe 'C:\Program Files\open_safety' -Force
+try {
+    Invoke-WebRequest "https://github.com/technion/open_safety/releases/latest/download/open_safety.exe" -OutFile "$($installpath)\open_safety.exe"
+} catch {
+    Write-Output "Failed to download installer"
+    exit
+}
+
 
 # List from application: allowed_extensions = ["js", "jse", "vbs", "wsf", "wsh", "hta"];
 # Obtained existing names with: cmd /c assoc .ext
