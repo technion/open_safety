@@ -1,10 +1,12 @@
 use std::env;
+use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
+use std::io;
+use std::io::prelude::*;
 use std::io::Write;
-use std::path::PathBuf;
 use std::path::Path;
-use std::ffi::OsStr;
+use std::path::PathBuf;
 
 extern crate base64;
 use base64::decode;
@@ -12,11 +14,14 @@ use base64::decode;
 fn process_malware(filename: &std::path::Path) {
     // our "happy path" is the unhappy path where a user has executed a script
     // We are going to raise alarms by adding the EICAR string
-    
     // Rename the original file preventing it from being run in future
     // https://stackoverflow.com/questions/43019846/best-way-to-format-a-file-name-based-on-another-path-in-rust
     let mut newname = PathBuf::from(filename);
-    newname.set_file_name(format!("DANGEROUS {}{}", newname.file_stem().unwrap().to_str().unwrap(), ".txt"));
+    newname.set_file_name(format!(
+        "DANGEROUS {}{}",
+        newname.file_stem().unwrap().to_str().unwrap(),
+        ".txt"
+    ));
     if let Err(e) = fs::rename(filename, newname) {
         display_information(Some(&format!("Failed to rename file: {}", e)));
         return;
@@ -28,12 +33,11 @@ fn process_malware(filename: &std::path::Path) {
     eicarfile.set_extension("com");
     let mut file = match File::create(eicarfile) {
         Ok(f) => f,
-        Err(e) => { 
+        Err(e) => {
             display_information(Some(&format!("Failed to create new file: {}", e)));
             return;
         }
     };
- 
     // In order to avoid this application itself being flagged by endpoint software, we've encoded our string
     // The below is the EICAR test string, with a new line before and after
     let eicarb64 = "WDVPIVAlQEFQWzRcUFpYNTQoUF4pN0NDKTd9JEVJQ0FSLVNUQU5EQVJELUFOVElWSVJVUy1URVNULUZJTEUhJEgrSCoK";
@@ -47,7 +51,7 @@ fn process_malware(filename: &std::path::Path) {
 }
 
 fn main() {
-    println!("Hello, world!");
+    println!("open_safety: https://lolware.net");
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("This program should be called with a parameter");
@@ -57,51 +61,52 @@ fn main() {
     let path = match Path::new(&args[1]).canonicalize() {
         Ok(buf) => buf,
         Err(x) => {
-            println!("This application should be called with a valid filename as a parameter: {}", x);
+            println!("Error with provided file name: {}", x);
             return;
         }
     };
 
-    if !check_safe_extension(&path) || !check_safe_path(&path) {
+    if let Err(e) = check_safe_extension(&path) {
+        display_information(Some(e));
+        return;
+    }
+    if let Err(e) = check_safe_path(&path) {
+        display_information(Some(e));
         return;
     }
     if !path.is_file() {
-        println!("Not a file");
+        display_information(Some("Filename provided is not a valid file"));
         return;
     }
     process_malware(&path);
-
 }
 
-fn check_safe_extension(path: &std::path::Path) -> bool {
+fn check_safe_extension(path: &std::path::Path) -> Result<(), &str> {
     // To ensure this application doesn't clobber anything unwanted, we check the filename against an extension allow list
     let extension = match path.extension().and_then(OsStr::to_str) {
         Some(ext) => ext,
         None => {
-            display_information(Some("Filename provided did not have an extension"));
-            return false;
+            return Err("Filename provided did not have an extension");
         }
     };
 
-    let allowed_extensions = [ "js", "jse", "vbs", "wsf", "wsh", "hta"];
-    println!("File extension is {}", extension);
+    let allowed_extensions = ["js", "jse", "vbs", "wsf", "wsh", "hta"];
     if !allowed_extensions.contains(&extension) {
-        display_information(Some("Filename provided did not have an allowed extension"));
-        return false;
+        return Err("Filename provided did not have an allowed extension");
     }
-    true
+    Ok(())
 }
 
-fn check_safe_path(path: &std::path::Path) -> bool {
+fn check_safe_path(path: &std::path::Path) -> Result<(), &str> {
     // To ensure this application doesn't clobber anything unwanted, we check the path against a block list
     // This is a "best effort" type of test and obviously doesn't address all possible risks
     let canonical = path.to_str().expect("convert to path");
-    println!("Canonical path is ;{};", canonical);
-    if canonical.starts_with("\\\\?\\C:\\Windows\\") || canonical.starts_with("\\\\?\\C:\\Program Files") {
-        display_information(Some("File resides in unsafe path"));
-        return false;
+    if canonical.starts_with("\\\\?\\C:\\Windows\\")
+        || canonical.starts_with("\\\\?\\C:\\Program Files")
+    {
+        return Err("File resides in unsafe path");
     }
-    true
+    Ok(())
 }
 
 fn display_information(input: Option<&str>) {
@@ -127,15 +132,43 @@ fn display_information(input: Option<&str>) {
         Some(x) => format!("Unfortunately the following error was encountered when triaging this issue:\n    {}", x)
     };
     println!("{}{}", display, notice);
+    pause();
 }
+
+fn pause() {
+    // From: https://users.rust-lang.org/t/rusts-equivalent-of-cs-system-pause/4494/3
+    let mut stdin = io::stdin();
+    let mut stdout = io::stdout();
+
+    // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
+    write!(stdout, "Press any key to continue...").unwrap();
+    stdout.flush().unwrap();
+
+    // Read a single byte and discard
+    let _ = stdin.read(&mut [0u8]).unwrap();
+}
+
 #[cfg(test)]
-#[test]
-fn rejects_bad_extensions() {
-    assert!(!check_safe_extension(Path::new("filename.bad")));
-    assert!(!check_safe_extension(Path::new("filename")));
-}
-#[test]
-fn accepts_good_extensions() {
-    assert!(check_safe_extension(Path::new("filename.js")));
-    assert!(check_safe_extension(Path::new("C:\\test.folder\\filename.js")));
+mod tests {
+    use super::{check_safe_extension, check_safe_path, Path};
+    #[test]
+    fn rejects_bad_extensions() {
+        assert!(check_safe_extension(Path::new("filename.bad")).is_err());
+        assert!(check_safe_extension(Path::new("filename")).is_err());
+    }
+    #[test]
+    fn accepts_good_extensions() {
+        assert!(check_safe_extension(Path::new("filename.js")).is_ok());
+        assert!(check_safe_extension(Path::new("C:\\test.folder\\filename.js")).is_ok());
+    }
+    #[test]
+    fn rejects_bad_paths() {
+        // This is a valid for the the safe path check, but due to the extension it should never be practically called
+        assert!(check_safe_path(&Path::new("C:\\Windows\\win.ini").canonicalize().unwrap()).is_err());
+    }
+    #[test]
+    fn accepts_good_paths() {
+        // This path isn't valid for the rest of our application as it's a folder, but it's valid for this test.
+        assert!(check_safe_path(&Path::new("C:\\Users\\public\\").canonicalize().unwrap()).is_ok());
+    }
 }
