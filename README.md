@@ -1,7 +1,7 @@
 # Open Safety
 An improvement on the "map .js files to notepad" trick
 
-Designed to assist with securing environments by ensuring such blocked events raise significant alarms.
+Designed to assist with securing environments by ensuring such blocking events raise significant alarms. For background and more information, see [this blog post](https://lolware.net/blog/neutralising-script-ransomware/)
 
 # Installation
 ## Enterprise
@@ -28,11 +28,11 @@ When this application is executed it will follow the below process, for the scri
 
 ## Development
 
-This application currently uses only one external crate (base64). It's designed as much as possible with guard rails around misuse, and it never actually deletes content. CI has been setup with strict use of clippy and cargo fmt. There's a deliberate goal of becoming "stable" and not requiring ongoing addition of features to assist with this becoming trusted for use. To this end, I'm unlikely to accept PRs with substantive changes.
+This application currently uses only one external crate (base64). It's designed as much as possible with guard rails around misuse, and it never actually deletes content. CI has been setup with strict use of clippy and cargo fmt. There's a deliberate goal of becoming "stable" and not requiring ongoing addition of features to assist with this becoming trusted for use. To this end, I'm unlikely to accept PRs with substantive changes. Designed to build with rust stable with no unsafe. The binary in "releases" is built straight from this codebase, includes no telemtry or additional code. Currently only Windows x64 type binaries are pre-built for releases.
 
 ## TODO
 
 - [X] Installation Powershell to fetch executable from Github releases 
 - [X] Implement CI with Github actions
-- [ ] Blog post on why this is useful
+- [X] Blog post on why this is useful
 - [ ] Obtain a code signing cert
