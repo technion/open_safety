@@ -36,3 +36,9 @@ This application currently uses only one external crate (base64). It's designed 
 - [X] Implement CI with Github actions
 - [X] Blog post on why this is useful
 - [ ] Obtain a code signing cert
+
+### Release guide
+
+cargo build --release
+$codeCertificate = Get-ChildItem Cert:\CurrentUser\My
+Set-AuthenticodeSignature -FilePath .\target\release\open_safety.exe  -Certificate $codeCertificate -TimeStampServer "http://timestamp.digicert.com"

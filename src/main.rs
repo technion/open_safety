@@ -1,3 +1,5 @@
+#![deny(unsafe_code)]
+
 use std::env;
 use std::ffi::OsStr;
 use std::fs;
@@ -51,10 +53,10 @@ fn process_malware(filename: &std::path::Path) {
 }
 
 fn main() {
-    println!("open_safety: https://lolware.net");
+    println!("open_safety: https://lolware.net/blog/neutralising-script-ransomware/");
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        println!("This program should be called with a parameter");
+        println!("This application must be provided a filename in order to take action - closing.");
         return;
     }
 

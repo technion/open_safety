@@ -24,13 +24,13 @@ try {
 $signature = Get-AuthenticodeSignature $tmpfile.FullName
 if ( $signature.Status -ne 'Valid') {
     Write-Output "Warning: Downloaded file is not signed"
-    # Commented out until issues with Sectigo issuing cert are resolved
-    #Remove-Item $tmpfile.FullName
-    #exit
+    Remove-Item $tmpfile.FullName
+    exit
 }
 
 Move-Item $tmpfile.FullName -Destination "$($installpath)\open_safety.exe" -Force
 Unblock-File "$($installpath)\open_safety.exe"
+Write-Output "Verified signature and installed binary. Setting up mappings"
 
 # List from application: allowed_extensions = ["js", "jse", "vbs", "wsf", "wsh", "hta"];
 # Obtained existing names with: cmd /c assoc .ext
