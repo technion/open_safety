@@ -8,6 +8,7 @@ Designed to assist with securing environments by ensuring such blocking events r
 - Deploy the executable to an appropriate location
 - Replace notepad.exe mappings in Group Policies with the new location
 ## SMB/Home User
+- [Download the Release of OpenSafetyInstall.ps1](https://github.com/technion/open_safety/releases/latest/download/OpenSafetyInstall.ps1). This is a signed version of the script in the git tree.
 - Run OpenSafetyInstall.ps1 from an elevated Powershell
 
 # Response
