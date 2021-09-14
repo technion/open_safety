@@ -11,6 +11,18 @@ Designed to assist with securing environments by ensuring such blocking events r
 - [Download the Release of OpenSafetyInstall.ps1](https://github.com/technion/open_safety/releases/latest/download/OpenSafetyInstall.ps1). This is a signed version of the script in the git tree.
 - Run OpenSafetyInstall.ps1 from an elevated Powershell
 
+# Usage
+
+A typical intended deployment involves never manually using this application. The above installation process will configure it to run with suspect files as a parameter. Example:
+```
+open_safety.exe example.js
+```
+
+You may wish to query the version:
+```
+open_safety.exe --version
+```
+
 # Response
 
 This applicaton aims to provide two mechanisms to better handle script execution than the notepad trick. Specifically:

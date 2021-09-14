@@ -13,6 +13,8 @@ use std::path::PathBuf;
 extern crate base64;
 use base64::decode;
 
+const OPEN_SAFETY_VERSION: &str = "v1.0";
+
 fn process_malware(filename: &std::path::Path) {
     // our "happy path" is the unhappy path where a user has executed a script
     // We are going to raise alarms by adding the EICAR string
@@ -59,7 +61,13 @@ fn main() {
         println!("This application must be provided a filename in order to take action - closing.");
         return;
     }
-
+    if args[1] == "--version" {
+        println!(
+            "open_safety Version: {}\nhttps://github.com/technion/open_safety",
+            OPEN_SAFETY_VERSION
+        );
+        return;
+    }
     let path = match Path::new(&args[1]).canonicalize() {
         Ok(buf) => buf,
         Err(x) => {
@@ -92,7 +100,9 @@ fn check_safe_extension(path: &std::path::Path) -> Result<(), &str> {
         }
     };
 
-    let allowed_extensions = ["js", "jse", "vbs", "wsf", "wsh", "hta"];
+    let allowed_extensions = [
+        "js", "jse", "vbs", "wsf", "wsh", "hta", "com", "inf", "pif", "reg", "scf", "scr", "wsc",
+    ];
     if !allowed_extensions.contains(&extension) {
         return Err("Filename provided did not have an allowed extension");
     }
