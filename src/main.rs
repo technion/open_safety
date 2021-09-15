@@ -13,7 +13,7 @@ use std::path::PathBuf;
 extern crate base64;
 use base64::decode;
 
-const OPEN_SAFETY_VERSION: &str = "v1.0";
+const OPEN_SAFETY_VERSION: &str = "v1.1";
 
 fn process_malware(filename: &std::path::Path) {
     // our "happy path" is the unhappy path where a user has executed a script

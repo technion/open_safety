@@ -1,0 +1,40 @@
+name: Build Release
+on: push
+
+jobs:
+  sign:
+
+    runs-on: windows-2019
+
+    steps:
+      - name: Checkout Binaries
+        uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+      - name: Build Binaries
+        run: cargo build --release --all-features
+      - name: Decrypt signing key
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          $tmpFolder = Join-Path $env:TEMP $(New-Guid)
+          New-Item -ItemType Directory $tmpFolder
+          Invoke-WebRequest -Uri "https://github.com/FiloSottile/age/releases/download/v1.0.0/age-v1.0.0-windows-amd64.zip" -OutFile (Join-Path $tmpFolder "age.zip")
+          Add-Type -assembly "system.io.compression.filesystem"
+          [io.compression.zipfile]::ExtractToDirectory((Join-Path $tmpFolder "age.zip"), $tmpFolder)
+          [IO.File]::WriteAllText((Join-Path $tmpFolder "code_signing.age"), ("${{ secrets.SIGN_PFX }}" -replace "`r`n", "`n"))
+          [IO.File]::WriteAllText((Join-Path $tmpFolder "agekey.txt"), ("${{ secrets.SIGN_AGE_KEY }}" -replace "`r`n", "`n"))
+          & (Join-Path $tmpFolder "age\age.exe") --decrypt -i (Join-Path $tmpFolder "agekey.txt") -o (Join-Path $tmpFolder "code_sign.pfx") (Join-Path $tmpFolder "code_signing.age")
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2((Join-path $tmpFolder "code_sign.pfx") , "${{ secrets.SIGN_PFX_KEY }}")
+          Set-AuthenticodeSignature -FilePath ".\target\release\open_safety.exe"  -Certificate $codeCertificate -TimeStampServer "http://timestamp.digicert.com"
+          Set-AuthenticodeSignature -FilePath ".\OpenSafetyInstall.ps1" -Certificate $codeCertificate -TimeStampServer "http://timestamp.digicert.com"
+          Remove-Item -Recurse "$tmpFolder" -Force
+        shell: powershell
+      - name: Upload Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            OpenSafetyInstall.ps1
+            .\target\release\open_safety.exe
