@@ -25,7 +25,7 @@ open_safety.exe --version
 
 # Response
 
-This applicaton aims to provide two mechanisms to better handle script execution than the notepad trick. Specifically:
+This application aims to provide two mechanisms to better handle script execution than the notepad trick. Specifically:
 
 - It provides the user a suitable message, presenting a much less confusing feedback than open a test file of source code
 - It attempts to alert any monitoring IT teams
