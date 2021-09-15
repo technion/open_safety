@@ -26,7 +26,7 @@ jobs:
           [IO.File]::WriteAllText((Join-Path $tmpFolder "code_signing.age"), ("${{ secrets.SIGN_PFX }}" -replace "`r`n", "`n"))
           [IO.File]::WriteAllText((Join-Path $tmpFolder "agekey.txt"), ("${{ secrets.SIGN_AGE_KEY }}" -replace "`r`n", "`n"))
           & (Join-Path $tmpFolder "age\age.exe") --decrypt -i (Join-Path $tmpFolder "agekey.txt") -o (Join-Path $tmpFolder "code_sign.pfx") (Join-Path $tmpFolder "code_signing.age")
-          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2((Join-path $tmpFolder "code_sign.pfx") , "${{ secrets.SIGN_PFX_KEY }}")
+          $codeCertificate  = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2((Join-path $tmpFolder "code_sign.pfx") , "${{ secrets.SIGN_PFX_KEY }}")
           Set-AuthenticodeSignature -FilePath ".\target\release\open_safety.exe"  -Certificate $codeCertificate -TimeStampServer "http://timestamp.digicert.com"
           Set-AuthenticodeSignature -FilePath ".\OpenSafetyInstall.ps1" -Certificate $codeCertificate -TimeStampServer "http://timestamp.digicert.com"
           Remove-Item -Recurse "$tmpFolder" -Force
