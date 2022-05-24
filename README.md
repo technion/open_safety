@@ -37,7 +37,7 @@ When this application is executed it will follow the below process, for the scri
 - To prevent any misuse, it first ensures the called file has an appropriate file extension
 - It further checks the file does not sit under standard system directories
 - The file is renamed to "DANGEROUS example.js.txt" to neutralise the risk.
-- It creates the file "example.com" in the same directory containing the EICAR test string. This should set should defenders by setting off appropriate alarms.
+- It creates the file "example.com" in the same directory containing the EICAR test string. This should set off appropriate alarms for Defenders
 
 ## Development
 
